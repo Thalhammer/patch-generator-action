@@ -20,14 +20,16 @@ runs:
     - uses: actions/upload-artifact@v4
       if: steps.diff.outputs.result == 'dirty'
       with:
-        name: git-patch
+        name: git-patch-${{ job.check_run_id }} # unique artifact name 
         path: /tmp/fix.diff
-    - run: |
+    - if: always() && steps.diff.outputs.result == 'dirty'
+      shell: bash
+      run: |
         echo
         echo $'\033[1;31m'"🚨 Your branch contains outdated files."$'\033[m'
         echo $'\033[1;37m'"💡 This problem can be automatically fixed."$'\033[m'
         echo
-        echo "👉 Download and extract the 'git-patch' artifact from https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} then run: 'git apply /path/to/fix.diff'"
+        echo "👉 Download and extract the 'git-patch-${{ job.check_run_id }}' artifact from https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} then run: 'git apply /path/to/fix.diff'"
         echo
         cat /tmp/fix.diff | gzip -9 | base64 > /tmp/fix.diff.gz.b64
         if [ "$(wc -l < /tmp/fix.diff.gz.b64)" -lt 100 ]
@@ -43,5 +45,3 @@ runs:
           echo "::endgroup::"
         fi
         exit 1
-      if: steps.diff.outputs.result == 'dirty'
-      shell: bash
